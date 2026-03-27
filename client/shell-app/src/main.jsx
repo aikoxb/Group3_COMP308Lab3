@@ -1,3 +1,7 @@
+// client/shell-app/src/main.jsx
+// Entry point for the Shell App host
+// Wraps the app with BrowserRouter, ApolloProvider, and AuthProvider
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

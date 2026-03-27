@@ -1,3 +1,7 @@
+// client/shell-app/src/pages/HomePage.jsx
+// Home page for the Shell App host
+// Displays a welcome message and prompts users to login or register
+
 import { Container } from 'react-bootstrap';
 import { useAuth } from '../auth/AuthContext';
 
