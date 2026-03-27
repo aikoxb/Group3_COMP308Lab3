@@ -7,7 +7,7 @@ import { useAuth } from "../auth/AuthContext";  // Import custom hook to access 
 
 // Component - protects routes that require a logged-in user
 function ProtectedRoute({ children }) {
-    
+
     // Get the current user and loading state from AuthContext
     const { user, loading } = useAuth();
 
