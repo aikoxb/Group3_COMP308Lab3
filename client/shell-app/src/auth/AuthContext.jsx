@@ -1,3 +1,7 @@
+// client/shell-app/src/auth/AuthContext.jsx
+// Provides authentication context and hooks for the Shell App
+// Manages user state, login, registration, and logout using GraphQL API
+
 import { createContext, useContext } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { gql } from '@apollo/client/core';

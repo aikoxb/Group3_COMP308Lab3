@@ -1,9 +1,15 @@
+// client/shell-app/src/App.jsx
+// Controls the routing and main layout for the Shell App host
+// Connects the login flow, protected routes, and remote frontend apps
+
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ProjectsRemote from "./remotes/ProjectsRemote";
+import AIReviewRemote from "./remotes/AIReviewRemote";
 import { useAuth } from './auth/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -31,10 +37,7 @@ function App() {
           path="/projects/*"
           element={
             <ProtectedRoute>
-              <div className="container mt-4">
-                <h2>Projects</h2>
-                <p>Projects module will be loaded here.</p>
-              </div>
+              <ProjectsRemote />
             </ProtectedRoute>
           }
         />
@@ -46,6 +49,7 @@ function App() {
                 <h2>AI Review</h2>
                 <p>AI Review module will be loaded here.</p>
               </div>
+              <AIReviewRemote />
             </ProtectedRoute>
           }
         />
