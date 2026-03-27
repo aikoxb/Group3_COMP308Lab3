@@ -15,7 +15,7 @@
   "description": "",
   "dependencies": {
     "@apollo/gateway": "^2.13.3",
-    "@apollo/server": "^5.5.0",
+    "@apollo/server": "^4.13.0",
     "@apollo/subgraph": "^2.13.3",
     "bcryptjs": "^3.0.3",
     "connect-mongo": "^6.0.0",

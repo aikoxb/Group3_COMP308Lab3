@@ -84,7 +84,7 @@ const server = new ApolloServer({
 await server.start();
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: true, credentials: true }));
 app.use('/graphql', express.json(), expressMiddleware(server, {
   context: async ({ req }) => ({
     userId: req.headers['user-id'] || null,
