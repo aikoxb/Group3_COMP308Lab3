@@ -1,3 +1,7 @@
+// client/shell-app/src/components/Navbar.jsx
+// Main navigation bar for the Shell App
+// Displays links based on authentication state and user role
+
 import { Navbar as BSNavbar, Nav, Container, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';

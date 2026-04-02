@@ -1,3 +1,7 @@
+// client/shell-app/src/pages/LoginPage.jsx
+// Login page for the Shell App host
+// Provides a form for users to enter their credentials and login
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Container, Form, Button, Alert, Card } from 'react-bootstrap';

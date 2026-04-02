@@ -1,3 +1,7 @@
+// client/shell-app/src/pages/RegisterPage.jsx
+// Register page for the Shell App host
+// Provides a form for users to enter their details and create an account
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
