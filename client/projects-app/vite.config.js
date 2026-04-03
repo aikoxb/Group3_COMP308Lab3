@@ -23,6 +23,9 @@ export default defineConfig({
     server: {
         port: 5174,
     },
+    preview: {
+        port: 5174,
+    },
     build: {
         target: "esnext",
     },

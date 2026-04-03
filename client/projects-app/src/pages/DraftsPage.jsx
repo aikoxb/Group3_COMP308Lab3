@@ -4,8 +4,31 @@
 
 import { useState } from "react";
 import { gql } from "@apollo/client";
-import { useLazyQuery, useMutation } from "@apollo/client/react";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { Alert, Button, Card, Form, ListGroup } from "react-bootstrap";
+
+// Query to load all projects that belong to the current user - used to build a list of all features that belong to the user's projects
+const PROJECTS_BY_USER = gql`
+  query ProjectsByUser {
+    projectsByUser {
+      id
+      title
+    }
+  }
+`;
+
+// Query to load all feature requests for a selected project - used to build the feature dropdown
+const FEATURE_REQUESTS = gql`
+  query FeatureRequests($projectId: ID!) {
+    featureRequests(projectId: $projectId) {
+      id
+      title
+      description
+      status
+      createdAt
+    }
+  }
+`;
 
 // Query to load all drafts for a selected feature
 const DRAFTS_BY_FEATURE = gql`
@@ -34,13 +57,40 @@ const SUBMIT_DRAFT = gql`
 // Component - displays the Drafts page
 function DraftsPage() {
 
+  const [projectId, setProjectId] = useState("");
   const [featureId, setFeatureId] = useState("");
   const [content, setContent] = useState("");
   const [version, setVersion] = useState(1);
   const [message, setMessage] = useState("");
 
-  // Prepare the query used to load drafts for a selected feature
-  const [loadDrafts, { data, error }] = useLazyQuery(DRAFTS_BY_FEATURE, {
+  // Load the current user's projects for the projects dropdown
+  const {
+    data: projectsData,
+    error: projectsError,
+  } = useQuery(PROJECTS_BY_USER, {
+    fetchPolicy: "network-only",
+    errorPolicy: "all",
+  });
+
+  // Load the features for the selected project
+  const {
+    data: featuresData,
+    error: featuresError,
+  } = useQuery(FEATURE_REQUESTS, {
+    variables: { projectId },
+    skip: !projectId, // This query is skipped until a project is selected
+    fetchPolicy: "network-only",
+    errorPolicy: "all",
+  });
+
+  // Load the drafts for the selected feature
+  const {
+    data,
+    error,
+    refetch,
+  } = useQuery(DRAFTS_BY_FEATURE, {
+    variables: { featureId },
+    skip: !featureId, // This query is skipped until a feature is selected
     fetchPolicy: "network-only",
     errorPolicy: "all",
   });
@@ -53,6 +103,18 @@ function DraftsPage() {
 
     event.preventDefault();
     setMessage("");
+
+    // Stop the form if the user has not selected a project
+    if (!projectId) {
+      setMessage("Please select a project first.");
+      return;
+    }
+
+    // Stop the form if the user has not selected a feature
+    if (!featureId) {
+      setMessage("Please select a feature.");
+      return;
+    }
 
     try {
       // Send the submitDraft mutation to the backend
@@ -68,14 +130,18 @@ function DraftsPage() {
       setMessage("Draft submitted successfully.");
 
       // Reload the drafts list for the selected feature
-      await loadDrafts({
-        variables: { featureId },
-      });
+      await refetch();
 
     } catch (error) {
       setMessage(error.message || "Failed to submit draft.");
     }
   };
+
+  // Store the returned projects for the project dropdown
+  const projects = projectsData?.projectsByUser || [];
+
+  // Store the returned features for the feature dropdown
+  const features = featuresData?.featureRequests || [];
 
   // Store the returned drafts
   const drafts = data?.draftsByFeature || [];
@@ -90,15 +156,60 @@ function DraftsPage() {
 
           {message && <Alert variant="info">{message}</Alert>}
 
+          {/* Show a warning if the user's projects could not be loaded */}
+          {projectsError && (
+            <Alert variant="warning">
+              Could not load your projects. Please make sure you are logged in
+              and have created at least one project.
+            </Alert>
+          )}
+
+          {/* Show a warning if the selected project's features could not be loaded */}
+          {featuresError && (
+            <Alert variant="warning">
+              Could not load features for the selected project.
+            </Alert>
+          )}
+
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label>Feature ID</Form.Label>
-              <Form.Control
-                type="text"
+              <Form.Label>Select Project</Form.Label>
+
+              {/* Dropdown to choose a project so the app can load related features */}
+              <Form.Select
+                value={projectId}
+                onChange={(event) => {
+                  setProjectId(event.target.value); // Save the selected project ID
+                  setFeatureId("");
+                }}
+                required
+              >
+                <option value="">Choose a project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.title}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Select Feature</Form.Label>
+
+              {/* Dropdown to choose a feature that belongs to the selected project */}
+              <Form.Select
                 value={featureId}
                 onChange={(event) => setFeatureId(event.target.value)}
+                disabled={!projectId}
                 required
-              />
+              >
+                <option value="">Choose a feature</option>
+                {features.map((feature) => (
+                  <option key={feature.id} value={feature.id}>
+                    {feature.title}
+                  </option>
+                ))}
+              </Form.Select>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -133,9 +244,10 @@ function DraftsPage() {
         <Card.Body>
           <Card.Title>Draft History</Card.Title>
 
+          {/* Reload the draft history for the currently selected feature */}
           <Button
             className="mb-3"
-            onClick={() => loadDrafts({ variables: { featureId } })}
+            onClick={() => refetch()}
             disabled={!featureId}
           >
             Load Drafts
@@ -143,8 +255,7 @@ function DraftsPage() {
 
           {error && (
             <Alert variant="warning">
-              Draft history is not ready yet. This page will work once the
-              Projects Service backend is completed.
+              Could not load draft history for the selected feature.
             </Alert>
           )}
 

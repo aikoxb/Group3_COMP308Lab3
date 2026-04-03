@@ -45,10 +45,6 @@ function App() {
           path="/ai-review/*"
           element={
             <ProtectedRoute>
-              <div className="container mt-4">
-                <h2>AI Review</h2>
-                <p>AI Review module will be loaded here.</p>
-              </div>
               <AIReviewRemote />
             </ProtectedRoute>
           }

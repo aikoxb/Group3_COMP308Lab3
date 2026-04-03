@@ -4,8 +4,19 @@
 
 import { useState } from "react";
 import { gql } from "@apollo/client";
-import { useLazyQuery, useMutation } from "@apollo/client/react";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { Alert, Button, Card, Form, ListGroup } from "react-bootstrap";
+
+// Query to load the current user's projects - used to fill the project dropdown with valid project IDs
+const PROJECTS_BY_USER = gql`
+  query ProjectsByUser {
+    projectsByUser {
+      id
+      title
+      description
+    }
+  }
+`;
 
 // Query to load all feature requests for a selected project
 const FEATURE_REQUESTS = gql`
@@ -52,10 +63,26 @@ function FeaturesPage() {
   const [status, setStatus] = useState("open");
   const [message, setMessage] = useState("");
 
-  // Prepare the query used to load features for a project
-  const [loadFeatures, { data, error }] = useLazyQuery(FEATURE_REQUESTS, {
+  // Load the current user's projects so the dropdown has valid project options
+  const {
+    data: projectsData,
+    loading: projectsLoading,
+    error: projectsError,
+  } = useQuery(PROJECTS_BY_USER, {
     fetchPolicy: "network-only",
     errorPolicy: "all",
+  });
+
+  // Load the feature requests for the selected project
+  const {
+  data,
+  error,
+  refetch,
+  } = useQuery(FEATURE_REQUESTS, {
+  variables: { projectId },
+  skip: !projectId, // Stops the query from running until a project is selected
+  fetchPolicy: "network-only",
+  errorPolicy: "all",
   });
 
   // Prepare the mutation used to add a feature request
@@ -67,8 +94,14 @@ function FeaturesPage() {
     event.preventDefault();
     setMessage("");
 
+    // Stop the form if the user has not selected a project yet
+    if (!projectId) {
+      setMessage("Please select a project.");
+      return;
+    }
+
     try {
-      // Send the addFeatureRequest mutation to the backend
+      // Send the addFeatureRequest mutation (with the selected project ID & form values) to the backend
       await addFeatureRequest({
         variables: {
           projectId,
@@ -84,9 +117,7 @@ function FeaturesPage() {
       setMessage("Feature request submitted successfully.");
 
       // Reload the feature list for the selected project
-      await loadFeatures({
-        variables: { projectId },
-      });
+      await refetch();
     } catch (error) {
       setMessage(error.message || "Failed to add feature request.");
     }
@@ -94,6 +125,9 @@ function FeaturesPage() {
 
   // Store the returned feature list
   const features = data?.featureRequests || [];
+
+  // Store the returned projects for the dropdown
+  const projects = projectsData?.projectsByUser || [];
 
   return (
     <div>
@@ -105,15 +139,31 @@ function FeaturesPage() {
 
           {message && <Alert variant="info">{message}</Alert>}
 
+          {/* Show a warning if the projects list could not be loaded */}
+          {projectsError && (
+            <Alert variant="warning">
+              Could not load your projects. Please make sure the Projects page is
+              working and that you are logged in.
+            </Alert>
+          )}
+
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label>Project ID</Form.Label>
-              <Form.Control
-                type="text"
+              <Form.Label>Select Project</Form.Label>
+
+              {/* Dropdown of valid projects owned by the current user */}
+              <Form.Select
                 value={projectId}
                 onChange={(event) => setProjectId(event.target.value)}
                 required
-              />
+              >
+                <option value="">Choose a project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.title}
+                  </option>
+                ))}
+              </Form.Select>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -162,7 +212,7 @@ function FeaturesPage() {
 
           <Button
             className="mb-3"
-            onClick={() => loadFeatures({ variables: { projectId } })}
+            onClick={() => refetch()}
             disabled={!projectId}
           >
             Load Features
@@ -170,8 +220,7 @@ function FeaturesPage() {
 
           {error && (
             <Alert variant="warning">
-              Feature request data is not ready yet. This page will work once
-              the Projects Service backend is completed.
+              Could not load feature requests for the selected project.
             </Alert>
           )}
 
